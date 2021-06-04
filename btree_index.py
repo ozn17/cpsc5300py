@@ -647,6 +647,7 @@ class BTreeTable(DbRelation):
 
     def project(self, tkey, column_names=None):
         """ Return a sequence of values for handle given by column_names. """
+        print("===> doing a project in Btreeindex")
         if column_names is None:
             row = self.index.lookup(tkey)
             if row is None:

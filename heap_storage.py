@@ -375,14 +375,17 @@ class HeapTable(DbRelation):
 
     def project(self, handle, column_names=None):
         """ Return a sequence of values for handle given by column_names. """
+        print("===>   heaptable project")
         self.open()
         block_id, record_id = handle
         block = self.file.get(block_id)
         data = block.get(record_id)
         row = self._unmarshal(data)
+        print("===> opened and got row making response")
         if column_names is None:
             return row
         else:
+            print("====> column_names in project is:", column_names)
             return {k: row[k] for k in column_names}
 
     def begin_write(self):

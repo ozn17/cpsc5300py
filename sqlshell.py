@@ -31,8 +31,13 @@ class Shell(object):
             collect = []
         for sql in cls.get_statements(statements):
             try:
+                print("===> about to parse string")
                 parse = SQLstatement.parseString(sql)
-                results = sqlexec.dispatch(parse).execute()
+                print("===> done with parse string. about to execute")
+                dispathResult = sqlexec.dispatch(parse)
+                print("===> dispatch result: ", dispathResult)
+                results = dispathResult.execute()
+                print("===> done with execute")
                 if interactive:
                     print(cls.unparse(parse))
                     cls.print_results(results)
@@ -204,5 +209,10 @@ class TestShell(unittest.TestCase):
                                 {'a': 'seven', 'b': 'uno', 'c': 'twenty'}, {'a': 'ten', 'b': 'uno', 'c': 'twenty'}])
 
 
+from sys import argv
 if __name__ == "__main__":
-    Shell.run()
+    if len(argv) > 1:
+        data_path = argv[1]
+        Shell.run(dbenv=argv[1])
+    else:
+        Shell.run(dbenv="./pySqlData")

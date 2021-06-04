@@ -10,6 +10,7 @@ from btree_index import BTreeTable
 from schema_tables import Schema
 from eval_plan import EvalPlanTableScan, EvalPlanSelect, EvalPlanProject, EvalPlanLoopJoin
 from sqlparse import SQLstatement
+import traceback
 
 DB_ENV = '~/cpsc4300env/pydata'  # this can get changed by calling initialize_db_env
 
@@ -55,8 +56,13 @@ class SQLExecShowTablesStatement(SQLExec):
 
     def execute(self):
         """ Executes: SELECT * FROM _tables """
-        cn, ca, rows, message = SQLExecQuery(SQLstatement.parseString('SELECT * FROM _tables')).execute()
+        print("===> in SQLExecShowTablesStatement, about to execute SQLExecQuery")
+        selectStatement = SQLExecQuery(SQLstatement.parseString('SELECT * FROM _tables'))
+        print("===> select statement parsed:", selectStatement)
+        cn, ca, rows, message = selectStatement.execute()
+        print("===> done with parse string and execute")
         rows = [row for row in rows if row['table_name'] not in Schema.SCHEMA_TABLES]
+        print("===> schema check complete returning rows")
         message = 'successfully returned ' + str(len(rows)) + ' rows'
         return cn, ca, rows, message
 
@@ -286,16 +292,19 @@ class SQLExecQuery(SQLExec):
     def __init__(self, parse):
         super().__init__(parse)
         self.table_names = parse['table_names']
-        self.query_columns = parse['columns'] if parse['columns'] != '*' else None
+        self.query_columns = parse['columns'] if parse['columns'][0] != '*' else None
         self.joins = parse['joins'] if 'joins' in parse else None
         self.where = parse['where']
 
     def execute(self):
         table_name = self.table_names[0]
         table = Schema.tables.get_table(table_name)
+        print("===> in SQLExecQuery.execute()")
+        print("===>   table identified:", table)
 
         # make the evaluation plan
         plan = EvalPlanTableScan(table)
+        print("===>   plan after evalPlanTableScan:", plan)
         if self.joins is not None:
             for join in self.joins:
                 outer = plan
@@ -305,12 +314,24 @@ class SQLExecQuery(SQLExec):
         where = _get_where_conjunction(self.where, plan.get_column_attributes())
         if where is not None:
             plan = EvalPlanSelect(where, plan)
+        print("self.query_columns is:", self.query_columns)
         if self.query_columns is not None:
             plan = EvalPlanProject(self.query_columns, plan)
         plan = plan.optimize()
+        print("===>   after plan is optimized:", plan)
 
         # and execute it
-        rows = [row for row in plan.evaluate()]
+        try:
+            rows_from_evaluate = plan.evaluate()
+            print("===> rows_from_evaluate after evaluate:", rows_from_evaluate)
+            for r in [row for row in rows_from_evaluate]:
+                print("r in rows_from_evaluate:", r)
+            rows = [row for row in rows_from_evaluate]
+            print("===>   rows after evaluate:", rows)
+        except Exception as e:
+            print("===> exception is:",e)
+            traceback.print_exc()
+
         return (plan.get_column_names(), plan.get_column_attributes(), rows,
                 'successfully returned ' + str(len(rows)) + ' rows')
 
