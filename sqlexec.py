@@ -169,7 +169,7 @@ class SQLExecTableDefinition(SQLExec):
                 for column_name in column_order:
                     Schema.columns.insert({'table_name': self.table_name,
                                            'column_name': column_name,
-                                           'data_type': column_attributes[column_name]['data_type']})
+                                           'data_type': column_attributes[column_name]['data_type'][0]})
 
                 # create table
                 table = heap_storage.HeapTable(self.table_name, column_order, column_attributes)
