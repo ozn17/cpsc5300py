@@ -272,7 +272,7 @@ class SQLExecQuery(SQLExec):
     def __init__(self, parse):
         super().__init__(parse)
         self.table_names = parse['table_names']
-        self.query_columns = parse['columns'] if parse['columns'] != '*' else None
+        self.query_columns = parse['columns'] if parse['columns'][0] != '*' else None
         self.where = parse['where']
 
     def execute(self):

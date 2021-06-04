@@ -145,5 +145,10 @@ class TestShell(unittest.TestCase):
         self.assertEqual(message, 'dropped index bmy')
 
 
+from sys import argv
 if __name__ == "__main__":
-    Shell.run()
+    if len(argv) > 1:
+        data_path = argv[1]
+        Shell.run(dbenv=argv[1])
+    else:
+        Shell.run(dbenv="./pySqlData")
