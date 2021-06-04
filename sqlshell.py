@@ -31,13 +31,9 @@ class Shell(object):
             collect = []
         for sql in cls.get_statements(statements):
             try:
-                print("===> about to parse string")
                 parse = SQLstatement.parseString(sql)
-                print("===> done with parse string. about to execute")
                 dispathResult = sqlexec.dispatch(parse)
-                print("===> dispatch result: ", dispathResult)
                 results = dispathResult.execute()
-                print("===> done with execute")
                 if interactive:
                     print(cls.unparse(parse))
                     cls.print_results(results)

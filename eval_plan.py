@@ -19,7 +19,6 @@ class EvalPlan(ABC):
         """ Return a sequence of (table,handle) pairs for the rows in this query. """
         # default implmenetation is done on self.evaluate (subclass has to override either evaluate or pipeline)
 
-        print("===> in evalplan.piplein()")
         table = PipelineCursor(self.evaluate())
         return table, table.select()
 
@@ -34,7 +33,6 @@ class EvalPlan(ABC):
 class PipelineTable(object):
     """ Table to use when passing pipelined rows (handle is just the row dict). """
     def project(self, row, column_names=None):
-        print("===>   project in pipelinetable")
         if column_names is None:
             return row
         else:
@@ -61,7 +59,6 @@ class EvalPlanLoopJoin(EvalPlan):
         self.using = using
 
     def pipeline(self):
-        print("===> in evalplanloopjoin.piplein()")
         def helper():
             ot, ohs = self.outer.pipeline()
             for oh in ohs:
@@ -95,9 +92,7 @@ class EvalPlanTableScan(EvalPlan):
         self.table = table
 
     def pipeline(self):
-        print("===> in evalplantablescan.piplein()")
         resp = self.table.select()
-        print("===> self.table.select() resp:", resp)
         return self.table, resp
 
     def get_column_names(self):
@@ -128,7 +123,6 @@ class EvalPlanSelect(EvalPlan):
 
     def pipeline(self):
         # base case is select on a table scan
-        print("===> in evalplanselect.piplein()")
         if isinstance(self.relation, EvalPlanTableScan):
             return self.relation.table, self.relation.table.select(self.where)
 
@@ -155,13 +149,8 @@ class EvalPlanProject(EvalPlan):
         return EvalPlanProject(self.projection, self.relation.optimize())
 
     def evaluate(self):
-        print("===> in evalplanProject.evaluate()")
         table, handles = self.relation.pipeline()
-        print("===>   after pipeline, got table:", table)
-        print("===>   after pipeline, got handles:", handles)
-        print("===> about to project on table")
         resp = (table.project(handle, self.projection) for handle in handles)
-        print("===> resp in evalplanproject is:", resp)
         return resp
 
     def get_column_names(self):
@@ -180,7 +169,6 @@ class EvalPlanIndexLookup(EvalPlan):
 
     def pipeline(self):
         """ Use the index on relation. """
-        print("===> in evalplanindexlookup.piplein()")
         return self.index.relation, self.index.lookup(self.key)
 
     def get_column_names(self):
@@ -209,7 +197,6 @@ class PipelineCursor(object):
                 yield row
 
     def project(self, row, column_names=None):
-        print("===>   after plan is pipelinecursor")
         if column_names is None:
             return row
         else:

@@ -56,13 +56,9 @@ class SQLExecShowTablesStatement(SQLExec):
 
     def execute(self):
         """ Executes: SELECT * FROM _tables """
-        print("===> in SQLExecShowTablesStatement, about to execute SQLExecQuery")
         selectStatement = SQLExecQuery(SQLstatement.parseString('SELECT * FROM _tables'))
-        print("===> select statement parsed:", selectStatement)
         cn, ca, rows, message = selectStatement.execute()
-        print("===> done with parse string and execute")
         rows = [row for row in rows if row['table_name'] not in Schema.SCHEMA_TABLES]
-        print("===> schema check complete returning rows")
         message = 'successfully returned ' + str(len(rows)) + ' rows'
         return cn, ca, rows, message
 
@@ -185,7 +181,7 @@ class SQLExecTableDefinition(SQLExec):
                 for column_name in column_order:
                     Schema.columns.insert({'table_name': self.table_name,
                                            'column_name': column_name,
-                                           'data_type': column_attributes[column_name]['data_type'],
+                                           'data_type': column_attributes[column_name]['data_type'][0],
                                            'primary_key_seq': pk[column_name] if column_name in pk else 0})
 
                 # create table
@@ -299,12 +295,9 @@ class SQLExecQuery(SQLExec):
     def execute(self):
         table_name = self.table_names[0]
         table = Schema.tables.get_table(table_name)
-        print("===> in SQLExecQuery.execute()")
-        print("===>   table identified:", table)
 
         # make the evaluation plan
         plan = EvalPlanTableScan(table)
-        print("===>   plan after evalPlanTableScan:", plan)
         if self.joins is not None:
             for join in self.joins:
                 outer = plan
@@ -314,23 +307,12 @@ class SQLExecQuery(SQLExec):
         where = _get_where_conjunction(self.where, plan.get_column_attributes())
         if where is not None:
             plan = EvalPlanSelect(where, plan)
-        print("self.query_columns is:", self.query_columns)
         if self.query_columns is not None:
             plan = EvalPlanProject(self.query_columns, plan)
         plan = plan.optimize()
-        print("===>   after plan is optimized:", plan)
 
         # and execute it
-        try:
-            rows_from_evaluate = plan.evaluate()
-            print("===> rows_from_evaluate after evaluate:", rows_from_evaluate)
-            for r in [row for row in rows_from_evaluate]:
-                print("r in rows_from_evaluate:", r)
-            rows = [row for row in rows_from_evaluate]
-            print("===>   rows after evaluate:", rows)
-        except Exception as e:
-            print("===> exception is:",e)
-            traceback.print_exc()
+        rows = [row for row in plan.evaluate()]
 
         return (plan.get_column_names(), plan.get_column_attributes(), rows,
                 'successfully returned ' + str(len(rows)) + ' rows')
